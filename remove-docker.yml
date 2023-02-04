@@ -1,0 +1,21 @@
+---
+- name: Uninstall Docker and Docker Compose
+  hosts: build_server
+  become: yes
+  tasks:
+    - name: Stop and disable the Docker service
+      service:
+        name: docker
+        state: stopped
+        enabled: no
+    - name: Remove the Docker CE package
+      yum:
+        name: docker-ce
+        state: absent
+    - name: Remove the Docker Compose binary
+      file:
+        path: /usr/local/bin/docker-compose
+        state: absent
+    - name: Remove the cadvisor
+      shell: docker stop cadvisor && docker rm cadvisor
+

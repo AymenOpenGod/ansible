@@ -1,0 +1,59 @@
+---
+- name: Install Tomcat on Production Server
+  hosts: 
+    - prod_server2
+  become: yes
+  tasks:
+    - name: Add Tomcat Group
+      group:
+        name: tomcat
+        state: present
+    - name: Create Tomcat User and Group
+      user:
+        name: tomcat
+        shell: /bin/false
+        home: /opt/tomcat
+        groups: tomcat
+        createhome: yes
+
+    - name: Download Tomcat 9
+      get_url:
+        url: https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.71/bin/apache-tomcat-9.0.71.tar.gz
+        dest: /tmp/apache-tomcat-9.0.71.tar.gz
+        validate_certs: no
+
+    - name: Extract the .tar.gz File
+      unarchive:
+        src: /tmp/apache-tomcat-9.0.71.tar.gz
+        dest: /opt/tomcat
+        remote_src: yes
+        owner: tomcat
+        group: tomcat
+
+    - name: Modify Tomcat User Permissions
+      file:
+        path: /opt/tomcat
+        owner: tomcat
+        group: tomcat
+        mode: u+x,g+x
+        recurse: yes
+
+    - name: Create a System Unit File
+      template:
+        src: tomcat.service.j2
+        dest: /etc/systemd/system/tomcat.service
+      vars:
+        java_home: "/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.312.b07-1.el7_9.x86_64/"
+
+    - name: Refresh the system
+      command: systemctl daemon-reload
+
+    - name: Set the Tomcat service to start on boot
+      command: systemctl enable tomcat
+
+    - name: Start the Tomcat service
+      command: systemctl start tomcat
+
+    - name: Verify that the Tomcat service is installed and running
+      command: systemctl status tomcat
+

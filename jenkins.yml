@@ -1,0 +1,45 @@
+---
+- name: Configure system and install dependencies
+  hosts: build_server
+  become: yes
+  tasks:
+  - name: Install epel-release and update system
+    yum:
+      name: epel-release
+      state: present
+    command: yum update -y
+  - name: Install JDK 11
+    yum:
+      name: java-11-openjdk-devel
+      state: present
+  - name: Find and set JAVA_HOME
+    shell: |
+      JAVA_HOME=$(find /usr/lib/jvm/java-11* | head -n 1)
+      echo "export JAVA_HOME=$JAVA_HOME" >> /etc/profile.d/java.sh
+      echo 'export PATH=$PATH:$JAVA_HOME' >> /etc/profile.d/java.sh
+      chmod +x /etc/profile.d/java.sh
+      source /etc/profile.d/java.sh
+    args:
+      executable: /bin/bash
+      become: yes
+  - name: Verify Java version
+    shell: java -version
+    become: yes
+  - name: Install Maven
+    yum:
+      name: maven
+      state: present
+    become: yes
+  - name: Install Jenkins
+    yum:
+      name: wget
+      state: present
+    command: wget -O /etc/yum.repos.d/jenkins.repo http://pkg.jenkins-ci.org/redhat-stable/jenkins.repo
+    command: rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+    yum:
+      name: jenkins
+      state: present
+    command: systemctl enable jenkins.service
+    command: systemctl start jenkins
+    become: yes
+

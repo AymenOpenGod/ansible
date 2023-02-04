@@ -1,0 +1,76 @@
+---
+- name: Install and configure Apache Tomcat
+  hosts: prod_server
+  become: true
+  vars:
+    tomcat_version: 9.0.70
+    tomcat_user: tomcat
+    tomcat_group: tomcat
+    tomcat_install_dir: /opt/tomcat
+    tomcat_service_file: /etc/systemd/system/tomcat.service
+    tomcat_users_file: /opt/tomcat/conf/tomcat-users.xml
+    tomcat_context_file: /opt/tomcat/webapps/manager/META-INF/context.xml
+    tomcat_server_file: /opt/tomcat/conf/server.xml
+    java_home: /usr/lib/jvm/java-1.8.0-openjdk-1.8.0.292.b10-1.el7_9.x86_64/jre
+  tasks:
+  - name: Create Tomcat system group
+    group:
+      name: "{{ tomcat_group }}"
+      state: present
+
+  - name: Create Tomcat system user
+    user:
+      name: "{{ tomcat_user }}"
+      group: "{{ tomcat_group }}"
+      shell: /bin/false
+      home: "{{ tomcat_install_dir }}"
+      state: present
+
+  - name: Download Tomcat archive
+    get_url:
+      url: "https://dlcdn.apache.org/tomcat/tomcat-9/v{{ tomcat_version }}/bin/apache-tomcat-{{ tomcat_version }}.tar.gz"
+      dest: "/tmp/apache-tomcat-{{ tomcat_version }}.tar.gz"
+
+  - name: Create Tomcat installation directory
+    file:
+      path: "{{ tomcat_install_dir }}"
+      state: directory
+
+  - name: Extract Tomcat archive
+    unarchive:
+      src: "/tmp/apache-tomcat-{{ tomcat_version }}.tar.gz"
+      dest: "{{ tomcat_install_dir }}"
+      remote_src: true
+      strip: 1
+
+  - name: Change ownership of Tomcat files
+    file:
+      path: "{{ tomcat_install_dir }}"
+      owner: "{{ tomcat_user }}"
+      group: "{{ tomcat_group }}"
+      recurse: yes
+
+  - name: Change permissions of Tomcat files
+    file:
+      path: "{{ tomcat_install_dir }}"
+      mode: '750'
+      recurse: yes
+
+  - name: Install Java
+    package:
+      name: java-1.8.0-openjdk-devel.x86_64
+      state: present
+      
+  - name: Edit Tomcat service file
+    template:
+      src: tomcat.service.j2
+      dest: "{{ tomcat_service_file }}"
+      owner: root
+      group: root
+      mode: 0644
+
+  - name: Add user to tomcat-users.xml
+    lineinfile:
+      dest: "{{ tomcat_users_file }}"
+      line: '<user username="deployer" password="deployer"
+

@@ -1,0 +1,23 @@
+---
+- name: Uninstall OpenJDK 18
+  hosts: all
+  become: true
+  tasks:
+  - name: Remove OpenJDK 18 package
+    yum:
+      name: java-18-openjdk
+      state: absent
+  - name: Remove OpenJDK 18 directory
+    file:
+      path: /opt/jdk-18
+      state: absent
+  - name: Remove Java environment variables
+    lineinfile:
+      path: ~/.bashrc
+      state: absent
+      regexp: "^export JAVA_HOME=\\/opt\\/jdk-18"
+    lineinfile:
+      path: ~/.bashrc
+      state: absent
+      regexp: "^export PATH=\\$PATH:\\$JAVA_HOME\\/bin"
+

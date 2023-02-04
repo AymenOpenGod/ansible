@@ -1,0 +1,26 @@
+---
+- name: Install and configure Tomcat on "pod_server2"
+  hosts: prod_server2
+  become: yes
+  tasks:
+    - name: Install Tomcat
+      yum:
+        name: tomcat
+        state: present
+
+    - name: Install Tomcat Webapps
+      yum:
+        name:
+        - tomcat-webapps
+        - tomcat-admin-webapps
+        - tomcat-docs-webapp
+        - tomcat-javadoc
+        state: present
+
+
+    - name: Start Tomcat service
+      service:
+        name: tomcat
+        state: started
+        enabled: yes
+
